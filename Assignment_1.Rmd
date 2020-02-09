@@ -1,0 +1,175 @@
+---
+title: "Assignment 1"
+author: "PW Janse van Rensburg, 15338673"
+output:
+  html_document:
+    df_print: paged
+---
+
+## Question 1
+
+The Weak Law of Large Numbers states that if you have a sample of independent and identically distributed random variables, as the sample size grows larger, the sample mean will tend toward the population mean, i.e. the sample mean converges in probability to the population mean
+
+Mathematically, this translates to:
+
+$\displaystyle \lim_{n \to \infty} P(|\bar{x}_{n} - \mu| \ge \epsilon) = 0$
+
+This tells us that with enough simulations, if we have a good estimate of the sample mean, it will probably be the same as the population mean. According to the simulation theory, we estimate $\hat{\theta}$ as $\frac{1}{M}\sum_{j=1}^{M}g(\underline{X}_j)$.  Again, if we consider $g(\underline{X}_j)$ at various points between a and b (the limits of the integral we are evaluating) and multiply that by (b-a) we get a square area over the actual area under the curve of the function we are estimating.  This square might be slightly over estimating or underestimating the actual area, so if we do this repeatedly for M times and average the square areas we obtain, we ought to get pretty damn close to the actual area under the curve, in turn explaining why $\frac{1}{M}\sum_{j=1}^{M}g(\underline{X}_j)$ makes sense as an estimate for $\hat{\theta}$.
+
+## Question 2
+
+$\int_{2}^{12} x^2 e^{−\frac{1}{2}x^2}dx$
+
+Leveraging the result in Question 1 above, we estimate $\theta$ as $E[g(x)]$ where $g(x) = x^2 e^{−\frac{1}{2}x^2}$ and $f(x) = \frac{1}{12-2}$ along with the hint of X ~ U(2,12)
+
+```{r}
+
+question_2 <- function(expression, M, upper, lower){
+  S <- numeric(M)
+  N <- sample(seq(lower,upper,1),size=M,replace=TRUE)
+  for(j in 1:M){
+    x <- runif(N[j],lower,upper)
+    S[j] <- ifelse(N[j]>0,sum(eval(parse(text=expression))),0)
+  }
+  hist(S,prob=TRUE)
+  Mean <- mean(S)
+  StdDev <- sd(S)
+  return(list(Mean = Mean, StdDev = StdDev, CI = c(Mean - StdDev/sqrt(M), Mean + StdDev/sqrt(M))))
+}
+
+expression <- 'x^2*exp((-1/2)*x^2)'
+M <- c(100,10000, 1000000)
+upper <- 12
+lower <- 2
+for(i in M){
+  result <- question_2(expression,i,upper,lower)
+  print(paste0('Number of iters: ',i))
+  print(paste0('Mean = ',toString(result[1])))
+  print(paste0('StdDev = ',toString(result[2])))
+  print(paste0('95% CI = [',toString(result[3]$CI[1]),',',toString(result[3]$CI[2]),']'))
+}
+
+```
+
+
+## Question 3
+
+
+Integral to be evaluated:
+$\int_{2}^{6}\int_{1}^{8}\int_{0}^{10} x_1 \sqrt{1+x_2}(1+x_1x_3)dx_1dx_2dx_3$
+
+```{r}
+question_3 <- function(M, upper, lower){
+  S <- numeric(M)
+  N <- sample(seq(min(lower),max(upper),1),size=M,replace=TRUE)
+  for(j in 1:M){
+    x_1 <- runif(N[j],lower[1],upper[1])
+    x_2 <- runif(N[j],lower[2],upper[2])
+    x_3 <- runif(N[j],lower[3],upper[3])
+    S[j] <- ifelse(N[j]>0,sum(x_1*sqrt(1+x_2)*(1+x_1*x_3)),0)
+  }
+  hist(S,prob=TRUE)
+  Mean <- mean(S)
+  StdDev <- sd(S)
+  return(list(Mean = Mean, StdDev = StdDev, CI = c(Mean - StdDev/sqrt(M), Mean + StdDev/sqrt(M))))
+}
+
+M <- c(100,10000,1000000)
+upper <- c(10,8,6)
+lower <- c(0,1,2)
+for(i in M){
+  result <- question_3(i,upper,lower)
+  print(paste0('Number of iters: ',i))
+  print(paste0('Mean = ',toString(result[1])))
+  print(paste0('StdDev = ',toString(result[2])))
+  print(paste0('95% CI = [',toString(result[3]$CI[1]),',',toString(result[3]$CI[2]),']'))
+}
+```
+
+One generally sees a narrowing in the confidence intervals.  It can be assumed that this is due to the weak law of large numbers, where the estimate is converging in probability to the population mean.  With more observations, the variance is reduced and we have more trust in our estimates, therefore the confidence interval can be more narrow.
+
+## Question 4
+
+To estimate the probability of hitting the circle, we need to calculate the area of the circle.  We do so using the standard formula of $\pi r^2$.  We obtain the results below:
+
+```{r}
+r <- 1
+circle_area <- pi*r^2
+circle_area
+```
+Furthermore, we need the entire sample space (i.e. entire area of square board).  We calculate this below:
+
+```{r}
+w <- 2
+sample_space <- w*w
+sample_space
+```
+Finally, we can then estimate the probability of hitting inside the circle, p, as:
+
+```{r}
+prob <- circle_area/sample_space
+prob
+```
+To leverage this to estimate the value of $\pi$, we can break down p as $prob = \frac{\pi r^2}{w^2}$ where r is the radius of the circle and w is the side length of the board. Essentially $\pi$ times some fixed quantity p.  This probability of hitting the circle can be written as $\pi p = 0.7853982$, where we either hit the circle or no.
+For an estimate of this probability, we simulate throwing at the board as repeatedly sampling coordinates from a uniform distribution, and leveraging the pythagoran theorem, where if (given randomly sampled x and y coordinates) $x^2 +y^2 > r^2$ the dart falls outside of the cirle, and if not, inside the circle. We repeat this M times, tracking the number of hits inside circle.
+
+```{r}
+M=1000
+
+inside_circle <- 0
+  
+for(i in 1:M){
+  #For us to simulate a random point in the field, we have to offset it with 0.5 to 
+  #simulate a point from the center of the field, so we can check it agianst the radius
+  
+  x <- (0.5-runif(1,0,1))*w
+  y <- (0.5-runif(1,0,1))*w
+  
+  if(x^2+y^2 <= r^2){
+    inside_circle <- inside_circle + 1
+  }
+}
+
+inside_circle
+```
+
+Dividing this by our total number of attempts, will give us our new probability, p, of hitting the board, which we can use to infer the size of the circle, and by inference $\pi$.
+
+```{r}
+prob_est <- inside_circle/M
+pi_estimate <- prob_est*sample_space
+pi_estimate
+```
+Putting this all together in a function and running multiple experiments with increasing number of attempts, we see $\pi$ approaching the true value of $\pi$
+```{r}
+
+question_4 <- function(M, side_length=2, db_radius=1){
+  
+  inside_circle <- 0
+  
+  for(i in 1:M){
+    x <- (0.5-runif(1,0,1))*side_length
+    y <- (0.5-runif(1,0,1))*side_length
+    
+    inside_circle <- inside_circle + ifelse(x^2+y^2 > db_radius^2,0,1)
+  }
+  
+  prob_est <- inside_circle/M
+  
+  return(prob_est)
+}
+
+side_length <- 2
+db_radius <- 1
+
+M <- c(100,1000,10000,100000,1000000)
+
+
+for(j in 1:length(M)){
+  pi <- question_4(M[j])*(side_length*side_length)/(db_radius*db_radius)
+  print(pi)
+}
+
+```
+
+
