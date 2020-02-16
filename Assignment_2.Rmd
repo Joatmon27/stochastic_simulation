@@ -99,7 +99,7 @@ q_2
 
 c) What conclusions do you draw from the results in Part (b)?
 
-Clearly R has a better built in function to generate psuedo-random numbers than what we built.  The *runif()* function produces a much smoother sample of values between 0 and 1, whereas it's a lot easier to pick up the repeating trend in our *lcm()* method.  Whenj considering the autocorrelations, the series produced by *runif* looks like a moving average, whereas the *lcm()*'s autocorrelations alternate and decay slowly, following almost a sine curve over the lags (indicative of an autoregressive series).
+Clearly R has a better built in function to generate psuedo-random numbers than what we built.  The *runif()* function produces a much more "random" sample of values between 0 and 1, whereas it's a lot easier to pick up the repeating trend in our *lcm()* method.  Looking at the QQ plots, we can see the *lcm()* has a step trend, whereas the *runif()* is much smoother.  When considering the autocorrelations, the series produced by *runif* looks like a moving average, whereas the *lcm()*'s autocorrelations alternate and decay slowly, following almost a sine curve over the lags (indicative of an autoregressive series).
 
 ## Question 3
 
@@ -203,4 +203,4 @@ Explain what the following R code does:
 > x = x + as.numeric(u.vec > p)
 ```
 
-Based on a threshold of $p=0.38$, a sequence of 100 *1*'s and a sample from a uniform distribution of equal length, a new sample is binary sample is generated leveraging the threshold to decide if the new sample will be either a *1* or a *2*.
+Based on a threshold of $p=0.38$, a sequence of 100 *1*'s and a sample from a uniform distribution of equal length, a new binary sample is generated leveraging the threshold to decide if the new sample will be either a *1* or a *2*.
