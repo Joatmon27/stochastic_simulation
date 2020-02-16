@@ -1,0 +1,206 @@
+---
+title: "Assignment 2"
+author: "PW Janse van Rensburg, 15338673"
+subtitle: Stochastic Simulation
+output:
+  html_document:
+    df_print: paged
+---
+
+## Question 1
+Consider a discrete random variable *X* which is uniformly distributed on the integers *1,2,…,n* . Show that we can generate *X* by using $X=Int(nU)+1$ with $U\sim Unif(0,1)$.
+
+```{r}
+
+generate_discrete = function(n){
+# param n: maximum value discrete value can take
+# output: returns the randomly generated integer
+  U = runif(1,0,1)
+  X = floor(n*U)+1
+  return(X)
+}
+
+generate_discrete(60)
+
+```
+The function essentially executes the formula given in question 1.  One specifies the maximum value n, a random value between 1 and 0 is generated using runif and that value is multiplied by the maximum value the discrete variable *X* can take on and the floor is obtain using the *floor* function and 1 is added.  Essentially it implies the inverse transform of the discrete variable is $X=Int(nU)+1$, where $Int()$ refers to just extracting the integer part of number.
+
+
+## Question 2
+This question deals with the R function "runif()", which can be used to generate observations from a continuous uniform distribution. We also compare this generator with the simple linear congruential generator discussed in the assignment.
+
+a) Generate 10 000 independent values of $U\sim Unif(0,1)$. Do this in 2 ways: by using the R function "runif()" (also see "help(runif)" to obtain documentation on this function), and by writing your own R function to generate values using the linear congruential method. Use $a=11$, $c=37$, $m=100$ and $x_0=85$ in your own function.
+
+Method 1:
+```{r}
+ind_vals_runif = runif(10000,0,1)
+head(ind_vals_runif)
+```
+
+Method 2:
+```{r}
+lcm = function(n=1,a=11, c=37, m=100, seed=85){
+# param n: number of random numbers to generate
+# param a: multiplier used to generate sequence
+# param c: shift used to generate sequence
+# param m: modulus used to generate sequence
+# param seed: seed value used on which the rest of the sequence generated will depend
+# output: n number of psuedo-random numbers
+  x = rep(0,n)
+  x[1] = seed
+  if(n>1){
+    for(i in 1:(n-1)){
+     x[i+1]  = (a*x[i]+c)%%m
+    }
+  }
+  U = x/m
+  return(U)
+}
+
+ind_vals_lcm = lcm(n=10000)
+head(ind_vals_lcm)
+```
+
+b) Compare the two methods used in Part (a) by: drawing histograms of the two sets of values; constructing QQ plots for the two sets of values; constructing plots of the pairs $(x_i,x_{i+1})$ for the two sets of values; constructing plots of the autocorrelation function for the two sets of values (use the R function "acf()" for this purpose).
+
+```{r warning=FALSE, message=FALSE}
+library(ggplot2)
+
+ggplot()+geom_histogram(aes(ind_vals_runif))+ggtitle('Histogram of runif()')
+
+ggplot()+geom_histogram(aes(ind_vals_lcm))+ggtitle('Histogram of lcm()')
+```
+```{r}
+qplot(sample=ind_vals_runif)+ggtitle('QQPlot of runif()')+xlab('Theoretrical Quantiles')+ylab('Sample Quantiles')
+
+qplot(sample=ind_vals_lcm)+ggtitle('QQPlot of lcm()')+xlab('Theoretrical Quantiles')+ylab('Sample Quantiles')
+```
+```{r warning=FALSE, message=FALSE}
+library(tseries)
+
+bacf = acf(ts(ind_vals_runif), plot = FALSE)
+bacfdf = with(bacf, data.frame(lag, acf))
+
+q_1 = ggplot(data = bacfdf, mapping = aes(x = lag, y = acf)) +
+       geom_hline(aes(yintercept = 0)) +
+       geom_segment(mapping = aes(xend = lag, yend = 0)) +
+       ggtitle('ACF of runif()')
+q_1
+
+bacf = acf(ts(ind_vals_lcm), plot = FALSE)
+bacfdf = with(bacf, data.frame(lag, acf))
+
+q_2 = ggplot(data = bacfdf, mapping = aes(x = lag, y = acf)) +
+       geom_hline(aes(yintercept = 0)) +
+       geom_segment(mapping = aes(xend = lag, yend = 0)) + 
+       ggtitle('ACF of lcm()')
+q_2
+```
+
+c) What conclusions do you draw from the results in Part (b)?
+
+Clearly R has a better built in function to generate psuedo-random numbers than what we built.  The *runif()* function produces a much smoother sample of values between 0 and 1, whereas it's a lot easier to pick up the repeating trend in our *lcm()* method.  Whenj considering the autocorrelations, the series produced by *runif* looks like a moving average, whereas the *lcm()*'s autocorrelations alternate and decay slowly, following almost a sine curve over the lags (indicative of an autoregressive series).
+
+## Question 3
+
+Consider the R command "set.seed()". Execute the following R commands twice:
+```{r eval=FALSE}
+>set.seed(1)
+>runif(5)
+```
+Comment on the results and the potential usefulness of the “set.seed()” command.
+
+```{r}
+set.seed(1)
+runif(5)
+
+set.seed(1)
+runif(5)
+```
+
+The results are exactly the same.  *set.seed()* uses a single integer argument to set as many seeds as are required. It is intended as a simple way to get quite different seeds by specifying small integer arguments.  This is useful when one needs to run reproducible experiments leveraging randomness, or you would like to use the same set of random numbers for running various experiments.  The example in the notes refers to a queuing system where it is of interest to estimate the average time in the system as a function of the number of service points, where using the same set of random numbers over different runs is important to ensure that observed differences in the output can be ascribed solely to the varying numbers of service points.
+
+Another real world example is when building models in any environment, but most importantly in a regulated environment such as banking or insurance, where when testing your model, you would like your results to be consistent to ensure the model is performing as expected.  You wouldn't want to train your model on the same set of data, in the same environment, just to get different results because the random weights that were initialised when kicking of training of the model was different.
+
+## Question 4
+
+Do Exercise 3.4 on page 94 of the text book.
+
+The Rayleigh density [156, Ch. 18] is
+$$
+f(x) = \frac{x}{\sigma^2}e^{(\displaystyle -\frac{x^2}{2\sigma^2})}, x \ge 0,\sigma>0
+$$
+
+Develop an algorithm to generate random samples from a Rayleigh($\sigma$) distribution. Generate Rayleigh($\sigma$) samples for several choices of $\sigma>0$ and check that the mode of the generated samples is close to the theoretical mode $\sigma$ (check the histogram).
+
+*First we compute the CDf:*
+
+$$
+F(x) = \int^{x}_{0}f(t)dt = \int^{x}_{0}\frac{x}{\sigma^2}e^{(\displaystyle -\frac{x^2}{2\sigma^2})}dt = 1-e^{(\displaystyle -\frac{x^2}{2\sigma^2})}
+$$
+*For the inverse CDF, we get:*
+
+$$
+\begin{align}
+u &= F(x)\\
+&= 1-e^{-\frac{x^2}{2\sigma^2}}\\
+u-1 &= -e^{-\frac{x^2}{2\sigma^2}}\\
+x &= \sqrt{-2\sigma^2ln(1-u)}
+\end{align}
+$$
+
+
+```{r message=FALSE}
+library(knitr)
+
+rrly = function (n, sigma) {
+        u = runif(n)
+        z = sqrt(-2*sigma^2*log(1-u))
+        return(z)
+}
+
+sigmas = c(1,2,5,10,20)
+rly_list = list()
+rly_plot_list = list()
+
+for(i in 1:(length(sigmas))){
+  rly_sample = rrly(1000,sigma = sigmas[i])
+  print(ggplot()+geom_histogram(aes(rly_sample)) + ggtitle(paste0('Rayleigh distribution, ','Sigma=',sigmas[i])))
+}
+
+```
+
+## Question 5
+
+Consider $U\sim logistic(\alpha,\beta)$ with density function
+$$
+f(x)=\frac{1}{\beta}\frac{e^{-\frac{x-\mu}{\beta}}}{[1+e^{-\frac{(x-\mu)}{\beta}}]^2}, \infty <x<\infty
+$$
+Explain how you would use the inverse transform method to generate observations of *x*. You do not need to write an R program for this purpose.
+
+*i) We first compute the CDF of the density function, f(x), and obtain:* 
+
+$$
+\begin{align}
+F(x) &= \int^{\infty}_{-\infty}f(t)dt \\
+ &= \frac{1}{e^{-\frac{x-\mu}{\beta}}+1}
+\end{align}
+$$
+
+*ii) Thereafter, we compute the inverse of the CDF *$F^{-1}(x)$
+
+*iii) Then, we sample u from the uniform distribution *$U(0,1)$
+
+*iv) The random variable * $Z=F^{-1}(u)\text{, }$ *is then the original density.*
+
+## Question 6
+
+Explain what the following R code does:
+```{r eval=FALSE}
+> p = 0.38
+> u.vec = runif(100,0,1)
+> x = rep(1,100)
+> x = x + as.numeric(u.vec > p)
+```
+
+Based on a threshold of $p=0.38$, a sequence of 100 *1*'s and a sample from a uniform distribution of equal length, a new sample is binary sample is generated leveraging the threshold to decide if the new sample will be either a *1* or a *2*.
