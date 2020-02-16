@@ -187,7 +187,16 @@ F(x) &= \int^{\infty}_{-\infty}f(t)dt \\
 \end{align}
 $$
 
-*ii) Thereafter, we compute the inverse of the CDF *$F^{-1}(x)$
+*ii) Thereafter, we compute the inverse of the CDF *$F^{-1}(x)$:
+$$
+\begin{align}
+u &= F(x) \\
+&= \frac{1}{e^{-\frac{x-\mu}{\beta}}+1}\\
+\frac{1}{u} &= e^{-\frac{x-\mu}{\beta}}+1\\
+1-\frac{1}{u} &= e^{-\frac{x-\mu}{\beta}}\\
+x &= -\beta ln(1-\frac{1}{u})+\mu
+\end{align}
+$$
 
 *iii) Then, we sample u from the uniform distribution *$U(0,1)$
 
