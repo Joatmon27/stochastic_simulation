@@ -2,6 +2,7 @@
 title: "Assignment 1"
 author: "PW Janse van Rensburg, 15338673"
 output:
+  pdf_document: default
   html_document:
     df_print: paged
 ---
@@ -20,7 +21,7 @@ This tells us that with enough simulations, if we have a good estimate of the sa
 
 $\int_{2}^{12} x^2 e^{−\frac{1}{2}x^2}dx$
 
-Leveraging the result in Question 1 above, we estimate $\theta$ as $E[g(x)]$ where $g(x) = x^2 e^{−\frac{1}{2}x^2}$ and $f(x) = \frac{1}{12-2}$ along with the hint of X ~ U(2,12)
+Leveraging the result in Question 1 above, we estimate $\theta$ as $E[g(x)]$ where $g(x) = x^2 e^{-\frac{1}{2}x^2}$ and $f(x) = \frac{1}{(12-2)}$ along with the hint of X ~ U(2,12)
 
 ```{r}
 
